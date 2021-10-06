@@ -16,38 +16,40 @@ def index():
 
 @app.route('/post', methods=['POST'])
 def save_post():
-    receive_title = request.form["title_give"]
-    receive_content = request.form["content_give"]
+    title = request.form.get('title')
+    content = request.form.get('content')
 
-    today = datetime.now()
-    mytime = today.strftime('%Y.%m.%d %H:%M:%S')
+    # 다큐먼트 개수를 반환
+    post_count = db.posts.count()
+    if post_count == 0:
+        max_value = 1
+    else:
+        max_value = db.posts.find_one(sort=[("idx", -1)])["idx"] + 1
+    print(max_value)
 
-    one = db.posts.find_one({'idx': 1}, {'_id': False})
-    idx = one['idx'] + 1
-
-
-
-    doc = {
-        'idx' : idx,
-        'title': receive_title,
-        'content': receive_content,
-        'reg_date': mytime
+    post = {
+        'idx': max_value,
+        'title': title,
+        'content': content,
+        'reg_date': datetime.now()
     }
+    db.posts.insert_one(post)
 
-    db.posts.insert_one(doc)
-    return jsonify({"result": "success", "msg": "포스팅 성공"})
+    return jsonify({"result": "success"})
 
 
 @app.route('/post', methods=['GET'])
 def get_post():
-    post_list = list(db.posts.find({}, {"_id": False}))
-    return jsonify({"result": "success", "post_list": post_list})
+    posts = list(db.posts.find({}, {'_id': False}))
+    return {"result": "success", "posts": posts}
 
 
 @app.route('/post', methods=['DELETE'])
 def delete_post():
-    db.posts.delete_one({})
-    return jsonify({"result": "success"})
+    idx = request.form.get("idx")
+
+    db.posts.delete_one({"idx": int(idx)})
+    return {"result": "success"}
 
 
 if __name__ == "__main__":

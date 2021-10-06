@@ -72,23 +72,25 @@
         }
 
         function postArticle() {
-            const title = $('#title').val()
-            const cotent = $('#content').val()
+            const title = $("#post-url").val();
+            const content = $("#post-comment").val();
 
             $.ajax({
                 type: "POST",
                 url: "/post",
                 data: {
-                    title_give: title,
-                    content_give: cotent
+                    title: title,
+                    content: content,
                 },
                 success: function (response) {
-                    alert(response['msg'])
-                    window.location.href = '/'
+                    if (response["result"] == "success") {
+                        alert("포스팅 성공");
+                        window.location.reload();
+                    } else {
+                        alert("서버 오류 입니다.")
+                    }
                 }
             })
-
-
         }
 
         function showArticles() {
@@ -97,41 +99,47 @@
                 url: "/post",
                 data: {},
                 success: function (response) {
-                    const posts = response['post_list']
-                     console.log(posts)
-                    let list_num = 0
+                    const posts = response["posts"];
+
                     for (let i = 0; i < posts.length; i++) {
-                        const title = posts[i]['title']
-                        const content = posts[i]['content']
-                        const postTime = posts[i]['reg_date']
-
-                        if (posts.length > list_num)
-                            list_num = list_num + 1
-                        else
-                            list_num = list_num
-
-                        const temp_html = `
-                        <tr>
-                            <th scope="row">${list_num}</th>
-                            <td>${title}</td>
-                            <td>${postTime}</td>
-                            <td>${content}</td>
-                            <td><button onclick="">삭제</button></td>
-                        </tr>
-                        `
-                        $('#list-post').append(temp_html)
+                        makeListPost(posts[i], i)
                     }
+
                 }
             })
+
 
         }
 
         function makeListPost(post, index) {
-
-
+            let temp_html = `
+            <tr>
+                <th scope="row">${index + 1}</th>
+                <td>${post['title']}</td>
+                <td>${post['reg_date']}</td>
+                <td><button type="button" class="btn btn-danger" onclick="deleteArticle(${post['idx']})">삭제</button></td>
+            </tr>
+            `;
+            $("#list-post").append(temp_html);
         }
 
         function deleteArticle(idx) {
+            $.ajax({
+                type: "DELETE",
+                url: "/post",
+                data: {
+                    "idx": idx
+                },
+                success: function (response) {
+                    if (response['result'] == 'success') {
+                        alert("삭제 성공!");
+                        window.location.reload();
+                    } else {
+                        alert("서버 오류");
+                    }
+                }
+
+            })
 
         }
     </script>
@@ -151,12 +159,12 @@
     <div id="post-box" class="form-post" style="display:none">
         <div>
             <div class="form-group">
-                <label for="title">제목</label>
-                <input id="title" class="form-control" placeholder="">
+                <label for="post-url">제목</label>
+                <input id="post-url" class="form-control" placeholder="">
             </div>
             <div class="form-group">
-                <label for="content">간단한 내용</label>
-                <textarea id="content" class="form-control" rows="2"></textarea>
+                <label for="post-comment">간단한 내용</label>
+                <textarea id="post-comment" class="form-control" rows="2"></textarea>
             </div>
             <button type="button" class="btn btn-primary" onclick="postArticle()">기사저장</button>
         </div>
@@ -171,7 +179,6 @@
         </tr>
         </thead>
         <tbody id="list-post">
-
 
         </tbody>
     </table>
